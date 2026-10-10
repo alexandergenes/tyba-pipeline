@@ -1,11 +1,11 @@
-import os
-import psycopg
+from db import conectar, ejecutar_sql
 
-conn_info = (
-    f"host={os.environ['DB_HOST']} port={os.environ['DB_PORT']} "
-    f"dbname={os.environ['DB_NAME']} user={os.environ['DB_USER']} "
-    f"password={os.environ['DB_PASSWORD']}"
-)
 
-with psycopg.connect(conn_info) as conn:
-    print(conn.execute("SELECT version()").fetchone()[0])
+def main():
+    with conectar() as conn:
+        ejecutar_sql(conn, "ddl.sql")
+    print("Tablas listas")
+
+
+if __name__ == "__main__":
+    main()
