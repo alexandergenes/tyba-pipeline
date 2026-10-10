@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tyba
+      POSTGRES_PASSWORD: tyba
+      POSTGRES_DB: movimientos
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tyba -d movimientos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pipeline:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: tyba
+      DB_PASSWORD: tyba
+      DB_NAME: movimientos
+    volumes:
+      - ./data:/app/data
+
+volumes:
+  pgdata:
