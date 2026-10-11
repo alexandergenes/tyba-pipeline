@@ -3,6 +3,7 @@ import time
 
 import polars as pl
 
+from config import OUTPUT_DIR
 from db import conectar, ejecutar_sql
 from etl.extraccion import listar_cortes, leer_corte
 from etl.transformacion import normalizar, validar, identificar
@@ -10,6 +11,7 @@ from etl.carga import (
     cortes_procesados, ultimo_corte, cargar_staging, registrar_rechazados,
     consolidar, verificar, registrar_control,
 )
+from insights import generar_reporte, exportar_rechazados
 
 log = logging.getLogger("pipeline")
 
@@ -53,6 +55,10 @@ def main():
             with conn.transaction():
                 procesar_corte(conn, orden, archivo)
             ultimo = orden
+
+        generar_reporte(conn)
+        exportar_rechazados(conn)
+        log.info("Reporte y rechazados exportados en %s", OUTPUT_DIR)
 
 
 if __name__ == "__main__":
