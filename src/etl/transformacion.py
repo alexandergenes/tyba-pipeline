@@ -53,7 +53,8 @@ def validar(lf: pl.LazyFrame):
     es_valido = pl.col("motivo") == ""
 
     validos = lf.filter(es_valido).select([pl.col(f"_{c}").alias(c) for c in COLUMNAS])
-    rechazados = lf.filter(~es_valido).select([*COLUMNAS, "motivo"])
+    rechazados = lf.filter(~es_valido).select(
+        [*COLUMNAS, "motivo", *[f"_{c}" for c in LLAVE]])
     return validos, rechazados
 
 
