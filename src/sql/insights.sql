@@ -82,3 +82,60 @@ SELECT COALESCE(description, '(sin descripción)') AS description,
 FROM movimientos_actual
 GROUP BY description
 ORDER BY description NULLS LAST;
+
+------------------------------------------------------------------------------------------------------------
+
+-- nombre: flujo_por_fondo
+SELECT fund,
+       SUM(amount) FILTER (WHERE type = 'entrada') AS entradas,
+       SUM(amount) FILTER (WHERE type = 'salida') AS salidas,
+       SUM(CASE WHEN type = 'entrada' THEN amount ELSE -amount END) AS flujo_neto
+FROM movimientos_actual
+GROUP BY fund
+ORDER BY flujo_neto DESC;
+
+-- nombre: flujo_por_producto
+SELECT product,
+       SUM(amount) FILTER (WHERE type = 'entrada') AS entradas,
+       SUM(amount) FILTER (WHERE type = 'salida') AS salidas,
+       SUM(CASE WHEN type = 'entrada' THEN amount ELSE -amount END) AS flujo_neto
+FROM movimientos_actual
+GROUP BY product
+ORDER BY flujo_neto DESC;
+
+-- nombre: evolucion_diaria
+SELECT date,
+       SUM(amount) FILTER (WHERE type = 'entrada') AS entradas,
+       SUM(amount) FILTER (WHERE type = 'salida') AS salidas,
+       SUM(CASE WHEN type = 'entrada' THEN amount ELSE -amount END) AS flujo_neto
+FROM movimientos_actual
+GROUP BY date
+ORDER BY date;
+
+-- nombre: concentracion_por_clientes
+WITH por_cliente AS (
+    SELECT id_cliente, SUM(amount) AS volumen
+    FROM movimientos_actual
+    GROUP BY id_cliente
+),
+deciles AS (
+    SELECT volumen, NTILE(10) OVER (ORDER BY volumen DESC) AS decil
+    FROM por_cliente
+)
+SELECT decil,
+       COUNT(*) AS clientes,
+       SUM(volumen) AS volumen,
+       ROUND(100.0 * SUM(volumen) / SUM(SUM(volumen)) OVER (), 2) AS pct_volumen,
+       ROUND(100.0 * SUM(SUM(volumen)) OVER (ORDER BY decil) / SUM(SUM(volumen)) OVER (), 2) AS pct_acumulado
+FROM deciles
+GROUP BY decil
+ORDER BY decil;
+
+-- nombre: participacion_por_entidad
+SELECT COALESCE(commercial_name, '(sin entidad)') AS entidad,
+       COUNT(*) AS movimientos,
+       SUM(amount) AS volumen,
+       ROUND(100.0 * SUM(amount) / SUM(SUM(amount)) OVER (), 2) AS pct_volumen
+FROM movimientos_actual
+GROUP BY commercial_name
+ORDER BY volumen DESC;
