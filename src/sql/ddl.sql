@@ -85,3 +85,5 @@ CREATE UNLOGGED TABLE IF NOT EXISTS stg_llaves_rechazadas (
     fund        TEXT NOT NULL,
     type        TEXT NOT NULL
 );
+
+ALTER TABLE control_cargas ADD COLUMN IF NOT EXISTS protegidos INT;

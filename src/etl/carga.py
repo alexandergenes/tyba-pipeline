@@ -34,3 +34,31 @@ def consolidar(conn, orden):
     conn.execute("SELECT set_config('pipeline.corte', %s, true)", (str(orden),))
     ejecutar_sql(conn, "consolidacion.sql")
     return dict(conn.execute("SELECT tipo, COUNT(*) FROM cambios GROUP BY tipo").fetchall())
+
+
+def verificar(conn, validas, cambios):
+    llegaron = cambios.get("nuevo", 0) + cambios.get("corregido", 0) + cambios.get("sin_cambios", 0)
+    if llegaron != validas:
+        raise RuntimeError(f"Clasificados {llegaron} movimientos, pero staging tiene {validas}")
+
+    actuales = conn.execute("SELECT COUNT(*) FROM movimientos_actual").fetchone()[0]
+    esperados = validas + cambios.get("protegido", 0)
+    if actuales != esperados:
+        raise RuntimeError(f"movimientos_actual tiene {actuales} filas, se esperaban {esperados}")
+
+
+def registrar_control(conn, archivo, orden, validas, rechazadas, cambios):
+    conn.execute(
+        """
+        INSERT INTO control_cargas (
+            archivo, orden_corte, filas_leidas, filas_validas, filas_rechazadas,
+            nuevos, corregidos, eliminados, sin_cambios, protegidos
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            archivo, orden, validas + rechazadas, validas, rechazadas,
+            cambios.get("nuevo", 0), cambios.get("corregido", 0),
+            cambios.get("eliminado", 0), cambios.get("sin_cambios", 0),
+            cambios.get("protegido", 0),
+        ),
+    )

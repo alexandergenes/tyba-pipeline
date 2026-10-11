@@ -9,8 +9,8 @@ from config import DB_DSN
 SQL_DIR = Path(__file__).parent / "sql"
 
 
-def conectar():
-    return psycopg.connect(DB_DSN)
+def conectar(autocommit=False):
+    return psycopg.connect(DB_DSN, autocommit=autocommit)
 
 
 def ejecutar_sql(conn, archivo):
