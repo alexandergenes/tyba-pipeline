@@ -35,6 +35,8 @@ Python limpia y Postgres consolida. La limpieza en Polars es expresiva y fácil 
 
 Cada corte se procesa en una sola transacción: si cualquier paso falla, no queda nada a medias.
 
+![Tablas en base de datos](tablas_sql.png)
+
 ## Modelo de datos
 
 | Tabla | Contenido |
@@ -46,6 +48,8 @@ Cada corte se procesa en una sola transacción: si cualquier paso falla, no qued
 | `stg_movimientos`, `stg_llaves_rechazadas` | Tablas de paso; se vacían en cada corte |
 
 ## Calidad de los datos
+
+![Datos crudos](docs/img_ t_inicial.png)
 
 El análisis está en `notebooks/exploracion.ipynb`. Hallazgos y decisiones:
 
@@ -63,6 +67,8 @@ El análisis está en `notebooks/exploracion.ipynb`. Hallazgos y decisiones:
 | `description` × `type` | No hay coherencia: depósitos marcados como salida, retiros como entrada | No se rechaza; requiere definir con negocio qué combinaciones son válidas |
 
 La limpieza de espacios se aplica a todas las columnas de texto, no solo donde apareció el problema. Las filas rechazadas no se descartan: quedan en `movimientos_rechazados` con todos sus motivos (una fila puede tener varios) para que negocio las revise.
+
+![Tabla control](tabla_control_cargas.png)
 
 ## Identificación de movimientos
 
