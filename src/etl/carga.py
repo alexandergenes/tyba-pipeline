@@ -1,6 +1,6 @@
 import polars as pl
 
-from db import copiar_df
+from db import copiar_df, ejecutar_sql
 from etl.extraccion import COLUMNAS
 from etl.transformacion import LLAVE
 
@@ -28,3 +28,9 @@ def cargar_staging(conn, validos: pl.DataFrame, rechazados: pl.DataFrame):
 def registrar_rechazados(conn, rechazados: pl.DataFrame, archivo):
     log = rechazados.select([*COLUMNAS, "motivo"]).with_columns(pl.lit(archivo).alias("archivo"))
     copiar_df(conn, log, "movimientos_rechazados")
+
+
+def consolidar(conn, orden):
+    conn.execute("SELECT set_config('pipeline.corte', %s, true)", (str(orden),))
+    ejecutar_sql(conn, "consolidacion.sql")
+    return dict(conn.execute("SELECT tipo, COUNT(*) FROM cambios GROUP BY tipo").fetchall())
