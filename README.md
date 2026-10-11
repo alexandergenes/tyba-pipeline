@@ -12,6 +12,8 @@ docker compose up --build
 
 Esto levanta PostgreSQL, procesa en orden los cortes de `data/raw/` y genera en `data/output/`:
 
+La carpeta `data/output/` incluye los resultados de una ejecución con los archivos de la prueba, como referencia. Se regeneran en cada corrida.
+
 - `reporte.md`: métricas de calidad, evolución entre cortes y análisis de negocio.
 - `rechazados.csv`: filas que no pasaron las validaciones, tal como llegaron y con su motivo, para revisión de negocio.
 
