@@ -4,22 +4,67 @@ Pipeline que ingiere los cortes diarios de movimientos (Parquet), los limpia y v
 
 ## Cómo correrlo
 
-Requisito: Docker.
+### Requisitos
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (o Docker Engine con Compose v2), en ejecución.
+- El puerto `5432` libre: si tienes un PostgreSQL local corriendo, detenlo antes.
+
+### Pasos
 
 ```bash
+git clone https://github.com/alexandergenes/tyba-pipeline.git
+cd tyba-pipeline
 docker compose up --build
 ```
 
-Esto levanta PostgreSQL, procesa en orden los cortes de `data/raw/` y genera en `data/output/`:
+La primera ejecución tarda alrededor de un minuto, mientras descarga las imágenes e instala dependencias. El pipeline termina cuando aparece `pipeline-1 exited with code 0`; PostgreSQL sigue corriendo para que se pueda consultar. Para detener todo: `Ctrl + C` y luego `docker compose down`.
 
-La carpeta `data/output/` incluye los resultados de una ejecución con los archivos de la prueba, como referencia. Se regeneran en cada corrida.
+En el log se ve una línea por corte con sus métricas:
+
+```
+movimientos_dia_T.parquet  | válidos=47423 rechazados=2577 | {'nuevo': 47423}
+movimientos_dia_T1.parquet | válidos=46571 rechazados=2429 | {'sin_cambios': 33338, 'corregido': 3634, ...}
+```
+
+### Resultados
+
+En `data/output/`:
 
 - `reporte.md`: métricas de calidad, evolución entre cortes y análisis de negocio.
 - `rechazados.csv`: filas que no pasaron las validaciones, tal como llegaron y con su motivo, para revisión de negocio.
 
-El pipeline es idempotente: volver a correrlo no reprocesa los cortes ya cargados. Para empezar desde cero, borrando también la base: `docker compose down -v`.
+La carpeta incluye los resultados de una ejecución con los archivos de la prueba, como referencia. Se regeneran en cada corrida.
 
-Para consultar la base: `docker compose exec postgres psql -U tyba -d movimientos`, o desde cualquier cliente en `localhost:5432` (usuario y contraseña `tyba`). Las credenciales están en el `docker-compose.yml` porque la prueba pide correr sin configuración adicional; en un entorno real irían en un gestor de secretos.
+### Consultar la base
+
+```bash
+docker compose exec postgres psql -U tyba -d movimientos
+```
+
+O desde cualquier cliente (pgAdmin, DBeaver, VS Code) en `localhost:5432`, base `movimientos`, usuario y contraseña `tyba`. La tabla principal es la vista `movimientos_actual`.
+
+Las credenciales están en el `docker-compose.yml` porque la prueba pide correr sin configuración adicional; en un entorno real irían en un gestor de secretos.
+
+### Volver a correr
+
+El pipeline es idempotente: si se ejecuta de nuevo, no reprocesa los cortes ya cargados. Para empezar desde cero, borrando también la base:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+### Notebooks (opcional)
+
+Los notebooks de `notebooks/` necesitan Python 3.12 y algunas librerías adicionales, solo para el análisis:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # En Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt duckdb jupysql duckdb-engine pandas matplotlib ipykernel
+```
+
+`insights.ipynb` consulta PostgreSQL, así que requiere que la base esté corriendo (`docker compose up -d postgres`) y que el pipeline se haya ejecutado al menos una vez.
 
 ## Arquitectura
 
